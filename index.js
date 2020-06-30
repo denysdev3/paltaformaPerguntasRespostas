@@ -3,6 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const connection = require("./database/database");
 const Pergunta = require("./database/Pergunta");
+const Resposta = require("./database/Resposta");
 
 //Database
 connection
@@ -24,7 +25,9 @@ app.use(bodyParser.json());
 
 //Rotas
 app.get("/",(req, res) => {
-    Pergunta.findAll({ raw: true }).then(perguntas => {
+    Pergunta.findAll({ raw: true, order:[
+        ['id','DESC'] // ASC = Crescente || DESC = Decrescente
+    ]}).then(perguntas => {
         res.render("index",{
             perguntas: perguntas
         });
@@ -43,6 +46,32 @@ app.post("/salvarpergunta",(req, res) => {
         descricao: descricao
     }).then(() => {
         res.redirect("/");
+    });
+});
+
+app.get("/pergunta/:id",(req, res) => {
+    var id = req.params.id;
+    Pergunta.findOne({
+        where: {id: id}
+    }).then(pergunta => {
+        if(pergunta != undefined){  // Pergunta encontrada
+            res.render("pergunta",{
+                pergunta: pergunta
+            });
+        }else{  // Não encontrada
+            res.redirect("/");
+        }
+    });
+})
+
+app.post("/responder",(req, res) => {
+    var corpo = req.body.corpo;
+    var perguntaId = req.body.pergunta;
+    Resposta.create({
+        corpo: corpo,
+        perguntaId: perguntaId
+    }).then(() => {
+        res.redirect("/pergunta/"+perguntaId);
     });
 });
 
